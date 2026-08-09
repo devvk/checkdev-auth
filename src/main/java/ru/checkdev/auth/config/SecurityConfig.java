@@ -1,7 +1,7 @@
 package ru.checkdev.auth.config;
 
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,20 +9,29 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.jwk.JwkTokenStore;
 
 @Configuration
 @EnableWebSecurity
 @EnableResourceServer
 @EnableAuthorizationServer
-@AllArgsConstructor
 public class SecurityConfig {
 
+    @Autowired
     private UserDetailsService userDetailsService;
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new JwkTokenStore(jwkSetUri);
+    }
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -42,9 +51,9 @@ public class SecurityConfig {
                 "/person/profile",
                 "/template/queue",
                 "/template/ping",
-                "/profiles/**",
-                "/profiles/tg/notified/**",
-                "/profiles/tg/unnotified/**",
+                //"/profiles/**",
+                //"/profiles/tg/notified/**",
+                //"/profiles/tg/unnotified/**",
                 "/swagger-ui/**",
                 "/v3/**"
         );
@@ -59,7 +68,6 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        http.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
         return http.getSharedObject(AuthenticationManagerBuilder.class).build();
     }
 }

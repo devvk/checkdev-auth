@@ -7,7 +7,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.checkdev.auth.AuthSrv;
@@ -36,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @AutoConfigureMockMvc
 public class ProfileControllerTest {
+
     @MockBean
     private ProfileService profileService;
     @Autowired
@@ -47,10 +50,10 @@ public class ProfileControllerTest {
             2, "name2", "experience2", 2, null, null);
 
     @Test
-    @WithMockUser
     public void whenGetProfileByIdThenReturnStatusOK() throws Exception {
         when(profileService.findProfileByID(profileDTO1.getId())).thenReturn(Optional.of(profileDTO1));
         mockMvc.perform(get("/profiles/{id}", profileDTO1.getId())
+                        .with(jwt())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(profileDTO1.getId()))
@@ -61,21 +64,21 @@ public class ProfileControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void whenGetProfileByIdProfileNotFoundThenReturnStatusNotFound() throws Exception {
         when(profileService.findProfileByID(profileDTO1.getId())).thenReturn(Optional.empty());
         mockMvc.perform(get("/profiles/{id}/", anyInt())
+                        .with(jwt())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent())
                 .andDo(print());
     }
 
     @Test
-    @WithMockUser
     public void whenGetAllProfilesOrderByCreateDescThenReturnStatusOkAndBody() throws Exception {
         var profiles = List.of(profileDTO1, profileDTO2);
         when(profileService.findProfilesOrderByCreatedDesc()).thenReturn(profiles);
         mockMvc.perform(get("/profiles/")
+                        .with(jwt())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size()").value(profiles.size()))
@@ -83,10 +86,10 @@ public class ProfileControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void whenGetAllProfilesOrderByCreateDescListEmptyThenReturnStatusNoContent() throws Exception {
         when(profileService.findProfilesOrderByCreatedDesc()).thenReturn(Collections.emptyList());
         mockMvc.perform(get("/profiles/")
+                        .with(jwt())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent())
                 .andDo(print());
